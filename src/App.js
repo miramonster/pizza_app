@@ -1,14 +1,13 @@
 import React from "react";
-import "./index.css"
+import "./index.css";
 import "./App.css";
 import Logo from "./topPizza.png";
 import mapStyles from "./mapStyles";
 import rose from "./compassRose.png";
 import {
   GoogleMap,
-  InfoWindow,
   Marker,
-  //InfoWindow,
+  InfoWindow,
   useLoadScript,
 } from "@react-google-maps/api";
 import usePlacesAutocomplete, {
@@ -44,7 +43,7 @@ const options = {
 };
 export default function App() {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    googleMapsApiKey: 'AIzaSyChx65TaOoV6FVspAn917zZm2siJHJsuEg',
     libraries,
   });
   const [markers, setMarkers] = React.useState([]);
@@ -83,8 +82,9 @@ export default function App() {
         <img src={Logo} width="auto" height="40" />
       </h1>
 
-      <Search panTo={panTo} />
       <locate panTo={panTo} />
+      <Search panTo={panTo} />
+      
 
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
@@ -94,19 +94,19 @@ export default function App() {
         onClick={onMapClick}
         onLoad={onMapLoad}
       >
-        {markers.map((marker) => (
+         {markers.map((marker) => (
           <Marker
-            key={marker.time.toISOString()}
+            key={`${marker.lat}-${marker.lng}`}
             position={{ lat: marker.lat, lng: marker.lng }}
-            icon={{
-              url: "/topPizza.png",
-              scaledSize: new window.google.maps.Size(30, 30),
-              origin: new window.google.maps.Point(0, 0),
-              anchor: new window.google.maps.Point(15, 15),
-            }}
             onClick={() => {
               setSelected(marker);
             }}
+            icon={{
+              url: './topPizza.png',
+              origin: new window.google.maps.Point(0, 0),
+              anchor: new window.google.maps.Point(15, 15),
+              scaledSize: new window.google.maps.Size(30, 30),
+            }}           
           />
         ))}
         {selected ? (
@@ -117,7 +117,13 @@ export default function App() {
             }}
           >
             <div>
-              <h2>"place holder"</h2>
+              <h2>
+                <span role="img" aria-label="pizza">
+                🍕
+                </span>{" "}
+                place holder
+              </h2>
+              <p>address spot</p>
             </div>
           </InfoWindow>
         ) : null}
