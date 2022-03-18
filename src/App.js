@@ -73,6 +73,13 @@ export default function App() {
 
   const [selected, setSelected] = React.useState(null);
 
+  const milesFrom = (userLocation, targetLocation) => {
+    const { location } = targetLocation.geometry;
+    let dx = userLocation.lat - location.lat(),
+      dy = userLocation.lng - location.lng();
+    return Math.hypot(dx, dy) * 69.2;
+  };
+
   const radialSearchTrigger = React.useCallback(
     (userPosition, placesService) => {
       const searchCircle = new window.google.maps.Circle({
@@ -89,9 +96,13 @@ export default function App() {
           type: ["resturaunt"],
         },
         (results, status) => {
-          console.log(status);
           if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            setMarkers(results);
+            setMarkers(
+              results.map((result) => ({
+                ...result,
+                distanceFromUser: milesFrom(userPosition, result),
+              }))
+            );
           }
         }
       );
@@ -110,7 +121,7 @@ export default function App() {
   }, [mapRef.current, userGeo]);
 
   const markerMaker = (marker) => {
-    const {geometry, name, place_id} = marker
+    const { geometry, name, place_id } = marker;
     return (
       <Marker
         key={place_id}
@@ -169,7 +180,7 @@ export default function App() {
             }}
           />
         )}
-               
+
         {markers.map(markerMaker)}
         {selected ? (
           <InfoWindow
@@ -255,7 +266,7 @@ function Search({ panTo, setUserGeo }) {
             setValue(e.target.value);
           }}
           disabled={!ready}
-          placeholder="Enter an address"
+          placeholder="Enter current address"
         />
         <ComboboxPopover>
           <ComboboxList>
