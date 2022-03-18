@@ -1,9 +1,7 @@
 import React from "react";
 import "./index.css";
 import "./App.css";
-import Logo from "./topPizza.png";
 import mapStyles from "./mapStyles";
-import rose from "./compassRose.png";
 import {
   GoogleMap,
   Marker,
@@ -21,7 +19,7 @@ import {
   ComboboxList,
   ComboboxOption,
 } from "@reach/combobox";
-import { formatRelative } from "date-fns";
+
 
 import "@reach/combobox/styles.css";
 
@@ -79,10 +77,10 @@ export default function App() {
     <div>
       <h1>
         Pizza Hunter
-        <img src={Logo} width="auto" height="40" />
+        <img src={"./topPizza.png"} width="auto" height="40" />
       </h1>
 
-      <locate panTo={panTo} />
+      <Locate panTo={panTo} />
       <Search panTo={panTo} />
       
 
@@ -102,7 +100,7 @@ export default function App() {
               setSelected(marker);
             }}
             icon={{
-              url: './topPizza.png',
+              url:"./topPizza.png",
               origin: new window.google.maps.Point(0, 0),
               anchor: new window.google.maps.Point(15, 15),
               scaledSize: new window.google.maps.Size(30, 30),
@@ -147,7 +145,7 @@ function Locate({ panTo }) {
       );
     }}
   >
-      <img src={rose} alt="compass locate me" />
+      <img src={"./compassRose.png"} alt="compass locate me" />
     </button>
   );
 }
@@ -193,10 +191,11 @@ function Search({ panTo }) {
           placeholder="Enter an address"
         />
         <ComboboxPopover>
+          {console.log(data)};
           <ComboboxList>
             {status === "OK" &&
-              data.map(({ id, description }) => (
-                <ComboboxOption key={id} value={description} />
+              data.map(({ place_id, description }) => (
+                <ComboboxOption key={place_id} value={description} />
               ))}
           </ComboboxList>
         </ComboboxPopover>
