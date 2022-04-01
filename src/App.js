@@ -23,55 +23,39 @@ import {
 import "@reach/combobox/styles.css";
 
 const libraries = ["places"];
-
-const mapContainerStyle = {
-  width: "100vw",
-  height: "100vh",
-};
-
-const center = {
-  lat: 29.760427,
-  lng: -95.369804,
-};
+const mapContainerStyle = { width: "100vw", height: "100vh" };
+const center = { lat: 29.760427, lng: -95.369804 };
 const options = {
   styles: mapStyles,
   disableDefaultUI: true,
   zoomControl: true,
 };
+
 export default function App() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: "AIzaSyChx65TaOoV6FVspAn917zZm2siJHJsuEg",
     libraries,
   });
 
-  const [userGeo, setUserGeo] = React.useState(null);
-
-  const [markers, setMarkers] = React.useState([]);
-
-  // const onMapClick = React.useCallback((event) => {
-  //   setMarkers((current) => [
-  //     ...current,
-  //     {
-  //       lat: event.latLng.lat(),
-  //       lng: event.latLng.lng(),
-  //       time: new Date(),
-  //     },
-  //   ]);
-  // }, []);
-
   const mapRef = React.useRef();
-  let placesService;
+  const placesService = React.useRef(null);
+  const [userGeo, setUserGeo] = React.useState(null);
+  const [markers, setMarkers] = React.useState([]);
+  const [selected, setSelected] = React.useState(null);
+  const [showCompass, setShowCompass] = React.useState(false);
+  const [compassHeading, setCompassHeading] = React.useState(0);
 
-  const onMapLoad = React.useCallback((map) => {
+  const onMapLoad = (map) => {
     mapRef.current = map;
-  }, []);
+    placesService.current = new window.google.maps.places.PlacesService(
+      mapRef.current
+    );
+  };
 
   const panTo = React.useCallback(({ lat, lng }) => {
     mapRef.current.panTo({ lat, lng });
     mapRef.current.setZoom(12);
   }, []);
-
-  const [selected, setSelected] = React.useState(null);
 
   const milesFrom = (userLocation, targetLocation) => {
     const { location } = targetLocation.geometry;
@@ -80,45 +64,29 @@ export default function App() {
     return Math.hypot(dx, dy) * 69.2;
   };
 
-  const radialSearchTrigger = React.useCallback(
-    (userPosition, placesService) => {
-      const searchCircle = new window.google.maps.Circle({
-        center: userPosition,
-        radius: 1609.344 * 25, // rough convertion from meters to miles
-      });
-      // console.log(placesService)
-      placesService.textSearch(
-        {
-          query: "Pizza",
-          // openNow: true,
-          location: userPosition,
-          radius: 1609.344 * 50,
-          type: ["resturaunt"],
-        },
-        (results, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            setMarkers(
-              results.map((result) => ({
+  const radialSearchTrigger = (userPosition, placesService) => {
+    placesService.textSearch(
+      {
+        query: "Pizza",
+        location: userPosition,
+        radius: 1609.344 * 2,
+        type: ["resturaunt", "meal_takeaway"],
+      },
+      (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+          console.log(results);
+          setMarkers(
+            results
+              .map((result) => ({
                 ...result,
                 distanceFromUser: milesFrom(userPosition, result),
               }))
-            );
-          }
+              .sort((a, b) => a.distanceFromUser - b.distanceFromUser)
+          );
         }
-      );
-    },
-    [mapRef.current]
-  );
-
-  React.useEffect(() => {
-    console.log("userGeo: ", userGeo);
-    if (mapRef.current && userGeo) {
-      placesService = new window.google.maps.places.PlacesService(
-        mapRef.current
-      );
-      radialSearchTrigger(userGeo, placesService);
-    }
-  }, [mapRef.current, userGeo]);
+      }
+    );
+  };
 
   const markerMaker = (marker) => {
     const { geometry, name, place_id } = marker;
@@ -144,30 +112,81 @@ export default function App() {
     );
   };
 
-  if (loadError) return "Error loading maps";
+  React.useEffect(() => {
+    setMarkers([]);
+    if (userGeo?.lat && userGeo?.lng) {
+      radialSearchTrigger(userGeo, placesService.current);
+    }
+  }, [userGeo?.lat, userGeo?.lng]);
 
+  React.useEffect(() => {
+    if (userGeo?.lat && userGeo?.lng && markers?.[0]) {
+      let x1 = markers[0].geometry.location.lat();
+      let y1 = markers[0].geometry.location.lng();
+      let x2 = userGeo.lat;
+      let y2 = userGeo.lng;
+    
+      const getAtan2 = (y, x) => Math.atan2(y, x);
+      let compassReading = getAtan2(y1 - y2, x1 - x2) * (180 / Math.PI);
+    
+      setCompassHeading(compassReading)
+    }
+  }, [markers, userGeo, setCompassHeading])
+
+  if (loadError) return "Error loading maps";
   if (!isLoaded) return "loading maps";
 
   return (
     <div>
+      <div 
+        className="compassContainer"
+        style={{
+          zIndex: `2`,
+          position: "absolute",
+          width: '100vw',
+          height: '100vh',
+          justifyContent: 'center',
+          alignItems: 'center',
+          display: showCompass ? 'flex' : 'none',
+        }}
+        >
+        <img
+          className="comapssSlice"
+          src={"./topPizza.png"}
+          width="auto"
+          height="800"
+          style={{
+            transition: 'transform 1s ease-in-out',
+            transform: `rotate(${compassHeading}deg)`
+          }}
+        />
+      </div>
       <h1>
         Pizza Hunter
-        <img src={"./topPizza.png"} width="auto" height="80" />
+        <button
+          style={{ background: "transparent", border: "none" }}
+          onClick={() => setShowCompass(!showCompass)}
+        >
+          <img src={"./topPizza.png"} width="auto" height="80" />
+        </button>
       </h1>
-
       <Locate
         panTo={panTo}
         setUserGeo={setUserGeo}
         radialSearchTrigger={radialSearchTrigger}
+        placesService={placesService}
       />
-      <Search panTo={panTo} setUserGeo={setUserGeo} />
-
+      <Search
+        panTo={panTo}
+        setUserGeo={setUserGeo}
+        placesService={placesService}
+        radialSearchTrigger={radialSearchTrigger}
+      />
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         zoom={8}
         center={center}
         options={options}
-        // onClick={onMapClick}
         onLoad={onMapLoad}
       >
         {userGeo?.lat && userGeo?.lng && (
@@ -180,7 +199,6 @@ export default function App() {
             }}
           />
         )}
-
         {markers.map(markerMaker)}
         {selected ? (
           <InfoWindow
@@ -205,7 +223,7 @@ export default function App() {
   );
 }
 
-function Locate({ panTo, setUserGeo, radialSearchTrigger }) {
+function Locate({ panTo, setUserGeo }) {
   return (
     <button
       className="locate"
@@ -216,9 +234,10 @@ function Locate({ panTo, setUserGeo, radialSearchTrigger }) {
             const userPosition = { lat: latitude, lng: longitude };
             panTo(userPosition);
             setUserGeo(userPosition);
-            //  radialSearchTrigger(userPosition);
           },
-          () => null //TODO: Error Handle
+          () => {
+            throw new Error("geoLocationError");
+          }
         );
       }}
     >
@@ -235,10 +254,7 @@ function Search({ panTo, setUserGeo }) {
     setValue,
     clearSuggestion,
   } = usePlacesAutocomplete({
-    requestOptions: {
-      location: { lat: () => 29.760427, lng: () => -95.369804 },
-      radius: 15 * 1000,
-    },
+    requestOptions: {},
   });
 
   return (
@@ -246,8 +262,6 @@ function Search({ panTo, setUserGeo }) {
       <Combobox
         onSelect={async (address) => {
           setValue(address, false);
-          //clearSuggestion();
-
           try {
             const results = await getGeocode({ address });
             const { lat, lng } = await getLatLng(results[0]);
@@ -256,8 +270,6 @@ function Search({ panTo, setUserGeo }) {
           } catch (error) {
             console.log("error");
           }
-
-          //console.log(address);
         }}
       >
         <ComboboxInput

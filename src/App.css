@@ -1,18 +1,3 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  font-size: 18px;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
-
 h1 {
   font-family: Helvetica, Sans-Serif;
   position: absolute;
@@ -23,6 +8,8 @@ h1 {
   margin: 0;
   padding: 0;
   height: 70;
+  display: flex;
+  align-items: center;
 }
 
 .search {
@@ -49,7 +36,19 @@ h1 {
   border: none;
   z-index: 10;
 }
+
 .locate img {
-  width: 30px;
+  width: 76px;
   cursor: pointer;
+}
+
+.compassContainer {
+  background-color: #ff4e00;
+  background-image: linear-gradient(315deg, #ff4e00 0%, #ec9f05 74%);
+}
+
+@media screen and (max-width: 768px) {
+  .search {
+    top: 7em;
+  }
 }
