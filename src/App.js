@@ -64,29 +64,31 @@ export default function App() {
     return Math.hypot(dx, dy) * 69.2;
   };
 
-  const radialSearchTrigger = (userPosition, placesService) => {
-    placesService.textSearch(
-      {
-        query: "Pizza",
-        location: userPosition,
-        radius: 1609.344 * 2,
-        type: ["resturaunt", "meal_takeaway"],
-      },
-      (results, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          console.log(results);
-          setMarkers(
-            results
-              .map((result) => ({
-                ...result,
-                distanceFromUser: milesFrom(userPosition, result),
-              }))
-              .sort((a, b) => a.distanceFromUser - b.distanceFromUser)
-          );
+  const radialSearchTrigger = React.useCallback(
+    (userPosition, placesService) => {
+      placesService.textSearch(
+        {
+          query: "Pizza",
+          location: userPosition,
+          radius: 1609.344 * 2,
+          type: ["resturaunt", "meal_takeaway"],
+        },
+        (results, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+            console.log(results);
+            setMarkers(
+              results
+                .map((result) => ({
+                  ...result,
+                  distanceFromUser: milesFrom(userPosition, result),
+                }))
+                .sort((a, b) => a.distanceFromUser - b.distanceFromUser)
+            );
+          }
         }
-      }
-    );
-  };
+      );
+    }, []
+  )
 
   const markerMaker = (marker) => {
     const { geometry, name, place_id } = marker;
@@ -117,7 +119,7 @@ export default function App() {
     if (userGeo?.lat && userGeo?.lng) {
       radialSearchTrigger(userGeo, placesService.current);
     }
-  }, [userGeo?.lat, userGeo?.lng]);
+  }, [userGeo?.lat, userGeo?.lng, radialSearchTrigger, userGeo]);
 
   React.useEffect(() => {
     if (userGeo?.lat && userGeo?.lng && markers?.[0]) {
@@ -151,6 +153,7 @@ export default function App() {
         }}
         >
         <img
+        alt=''
           className="comapssSlice"
           src={"./topPizza.png"}
           width="auto"
@@ -160,6 +163,12 @@ export default function App() {
             transform: `rotate(${compassHeading}deg)`
           }}
         />
+        {/* TODO
+          Add some container around here...
+          use the results of markers[0] to conditionally render this info blob
+          markers[0] will also have info for the location that you can use in this info blurb 
+          markers[0] && console.log(markers[0]) // use this to see what on that object. 
+        */}
       </div>
       <h1>
         Pizza Hunter
@@ -167,7 +176,7 @@ export default function App() {
           style={{ background: "transparent", border: "none" }}
           onClick={() => setShowCompass(!showCompass)}
         >
-          <img src={"./topPizza.png"} width="auto" height="80" />
+          <img alt='' src={"./topPizza.png"} width="auto" height="80" />
         </button>
       </h1>
       <Locate
@@ -252,7 +261,6 @@ function Search({ panTo, setUserGeo }) {
     value,
     suggestions: { status, data },
     setValue,
-    clearSuggestion,
   } = usePlacesAutocomplete({
     requestOptions: {},
   });
